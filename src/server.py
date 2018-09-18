@@ -9,6 +9,20 @@ class Server:
         self.server.listen(10000)
         self.clients = []
 
+#    def handler(self, connection, address):
+
+
+    def accept_new_client(self):
+        while True:
+                connection, address = self.server.accept()
+                name = connection.server.recv(1024)
+                print("%s acaba de conectarse" %name)
+                self.clients.append(connection)
+                clientThread = threading.Thread(target = self.handler, args=(Co, PORT))
+                clientThread.daemon = True
+                clientThread.start()
+                print(self. clients)
+
 
 
 if len(sys.argv) != 3
