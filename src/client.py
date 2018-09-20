@@ -1,10 +1,10 @@
 import sys
-
+from src.status import Status
 
 class Client:
     def __init__(self, name, socket, ip):
         self.name = ''
-        self.status = True
+        self.status = Status.ACTIVE.value
         self.socket = socket
         self.ip = ip
 
