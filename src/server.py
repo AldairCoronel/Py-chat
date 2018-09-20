@@ -5,6 +5,7 @@ from src.status import Status
 
 class Server:
     clients = []
+    rooms = []
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     aceptarClientes = False
 
@@ -12,6 +13,7 @@ class Server:
         self.server.bind(('0.0.0.0', PORT))
         self.server.listen(10000)
         self.clients = []
+        self.rooms = []
         self.aceptarClientes = True
 
 
@@ -31,7 +33,7 @@ class Server:
             client.get_socket().send(bytes('Nombre repetido', 'UTF-8'))
 
 
-    def send_clients(self   ):
+    def send_clients(self):
         listClients = ''
         for client in self.clients:
             listClients += str(client) + ', '
@@ -91,6 +93,9 @@ class Server:
         return userMessage
 
 
+    def create_room(self, room_name, client):
+
+
     def receive_message(self, client):
         while True:
             message = client.get_socket().recv(1024)
@@ -111,12 +116,14 @@ class Server:
             elif message[0] == Protocol.USERS.value:
                 self.send_clients()
 
-            elif message[0] == Protocol.PUBLICMESSAGE.value:
+            elif message[0] == Protocol.PUBLICMESSAGE.value and len(message) > 1:
                 userMessage = self.get_user_message(message, 1)
                 self.send_public_message(userMessage)
 
-            # elif message[0] == Protocol.CREATEROOM.value:
-            #
+            elif message[0] == Protocol.CREATEROOM.value and len(message) > 1:
+                room_name = message[1]
+                self.create_room(room_name, client)
+
             # elif message[0] == Protocol.INVITE.value:
             #
             # elif message[0] == Protocol.JOINROOM.value:
