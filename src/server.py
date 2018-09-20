@@ -1,5 +1,6 @@
 import sys, socket, threading
 from src.protocol import Protocol
+from src.client import Client
 
 class Server:
     clients = []
@@ -11,33 +12,39 @@ class Server:
         self.clients = []
         self.aceptarClientes = True
 
-    def verify_name(name, clients):
-        if (name < 2 || name > 15)
-            print('El nombre debe tener entre 2 y 15 caracteres')
-        elif
-            for client in clients:   
+    def name_is_unique(self, name):
+        unique = True
+        for client in self.clients:
+            unique = unique and (False if name == client.get_name() else True)
+        return unique
+
+    def change_client_name(self, name, client):
+        if self.name_is_unique(name):
+            client.set_name(name)
+        else:
+            client.get_socket().send(bytes('Nombre repetido', 'UTF-8'))
 
 
 
-    def get_name(clients, connection):
-            if (connection.lenght != 0):
-                name = connection
-                verify_name(name, clients)
-            else:
-                print('Necesitas mandarme un nombre de usuario.')
-                break
+    def send_clients(self):
+        listClients = ''
+        for client in self.clients:
+            listClients += str(client)
+        for client in self.clients:
+            client.get_socket().send(bytes(listClients, 'UTF-8'))
 
-    def change_client_name(connection, address, clients):
-        name = get_name(clients, connection)
+    def send_message(self, userMessage):
+        for client in self.clients:
+            client.get_socket().send(bytes(userMessage, 'UTF-8'))
 
-    def recieve_message(self, connection, address, clients):
+
+    def receive_message(self, client):
         while True:
-            message = connection.recv(1024)
+            message = client.get_socket().recv(1024)
             message = message.decode('utf-8')
-            args = []
             message = message.split(' ')
-            if message[0] == Protocol.IDENTIFY.value:
-                change_client_name(message[1], address, clients)
+            if message[0] == Protocol.IDENTIFY.value and len(message) > 1:
+                self.change_client_name(message[1], client)
 
             # elif message[0] == Protocol.STATUS.value:
             #
@@ -46,18 +53,13 @@ class Server:
 
 
             elif message[0] == Protocol.USERS.value:
-                listClients = ''
-                for client in self.clients:
-                    listClients += str(client)
-                for client in self.clients:
-                    client.send(bytes(listClients, 'UTF-8'))
+                self.send_clients()
 
             elif message[0] == Protocol.PUBLICMESSAGE.value:
-                variable = ''
+                userMessage = ''
                 for i in range(1, len(message)):
-                    variable += message[i] + ' '
-                for client in self.clients:
-                    client.send(bytes(variable, 'UTF-8'))
+                    userMessage += message[i] + ' '
+                self.send_message(userMessage)
 
             # elif message[0] == Protocol.CREATEROOM.value:
             #
@@ -78,11 +80,10 @@ class Server:
     def arriba(self):
         while self.aceptarClientes:
                 connection, address = self.server.accept()
-                # name = connection.server.recv(1024)
-                print('acaba de conectarse')
-                self.clients.append(connection)
-                serverThread = threading.Thread(target = self.recieve_message,
-                                args=(connection, address, self.clients))
+                client = Client(None, connection, address)
+                print('Acaba de conectarse ', address)
+                self.clients.append(client)
+                serverThread = threading.Thread(target = self.receive_message,
+                                args=(client,))
                 # serverThread.daemon = True
                 serverThread.start()
-                print(self.clients)

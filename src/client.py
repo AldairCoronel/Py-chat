@@ -2,32 +2,35 @@ import sys
 
 
 class Client:
-    def __init__(name, socket, ip):
+    def __init__(self, name, socket, ip):
         self.name = ''
         self.status = True
         self.socket = socket
         self.ip = ip
 
-    def set_name(name):
+    def set_name(self, name):
         self.name = name
 
-    def get_name():
+    def get_name(self):
         return self.name
 
-    def set_status(status):
+    def set_status(self, status):
         self.status = status
 
-    def get_status():
+    def get_status(self):
         return self.status
 
-    def set_socket(socket):
+    def set_socket(self, socket):
         self.socket = socket
 
-    def get_socket():
+    def get_socket(self):
         return self.socket
 
-    def set_ip(ip):
+    def set_ip(self, ip):
         self.ip = ip
 
-    def get_ip():
+    def get_ip(self):
         return self.ip
+
+    def __str__(self):
+        return self.name
