@@ -67,8 +67,10 @@ class Server:
             client.get_socket().send(bytes('Usuario no encontrado.', 'UTF-8'))
 
 
-    def send_room_message(self, room, users, client):
-        
+    def send_room_message(self, room, roomMessage):
+        members = room.get_members()
+        for member in members:
+            member.send(bytes(roomMessage, 'UTF-8'))
 
     def verify_status(self, status, client):
         verified = True
@@ -124,7 +126,7 @@ class Server:
     def create_room(self, roomName, client):
         if self.verify_chat_room_duplicate(roomName):
             room = Room(roomName, client.get_socket())
-            room.add_member(client.get_socket)
+            room.add_member(client.get_socket())
             self.rooms.append(room)
             client.get_socket().send(bytes('Sala creada exitosamente.',
                                             'UTF-8'))
@@ -180,9 +182,9 @@ class Server:
                                            'UTF-8'))
 
 
-    def get_room(self, room):
+    def get_room(self, roomName):
         for room in self.rooms:
-            if room == room.get_name():
+            if roomName == room.get_name():
                 return room
 
 
@@ -292,14 +294,8 @@ class Server:
                     roomName = message[1]
                     if self.verify_chat_room_existance(roomName):
                         room = self.get_room(roomName)
-                        users_verified = self.get_unique_users(message)
-                        sockets = self.get_sockets(users_verified)
-                        if len(sockets) > 0:
-                            self.send_room_message(room, sockets, client)
-                        else:
-                            client.get_socket().send(bytes('No existen los usuarios '
-                                                           'que quieres invitar',
-                                                           'UTF-8'))
+                        roomMessage = self.get_user_message(message, 2)
+                        self.send_room_message(room, roomMessage)
                     else:
                         client.get_socket().send(bytes('La sala no existe',
                                                        'UTF-8'))
