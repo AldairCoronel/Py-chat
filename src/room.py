@@ -32,3 +32,9 @@ class Room:
             if person == user:
                 return True
         return False
+
+    def verify_if_is_member(self, user):
+        for member in self.members:
+            if user == member:
+                return True
+        return False
