@@ -2,6 +2,7 @@ import sys, socket, threading
 from src.protocol import Protocol
 from src.client import Client
 from src.status import Status
+from src.room import Room
 
 class Server:
     clients = []
@@ -86,14 +87,89 @@ class Server:
             client.get_socket().send(bytes('Estado actualizado exitosamente',
                                             'UTF-8'))
 
-    def get_user_message(self, message, indice):
+
+    def get_user_message(self, message, index):
         userMessage = ''
-        for i in range(indice, len(message)):
+        for i in range(index, len(message)):
             userMessage += message[i] + ' '
         return userMessage
 
 
-    def create_room(self, room_name, client):
+    def get_users_names(self, message, index):
+        names = []
+        for i in range(index, len(message)):
+            names.append(i)
+        return names
+
+    def get_sockets(self, users):
+        sockets = []
+        for user in users:
+            for client in self.clients:
+                if user == client.get_name():
+                    sockets.append(client.get_socket())
+        return sockets
+
+
+    def verify_chat_room(self, roomName):
+        for room in self.rooms:
+            if roomName == room.get_name():
+                return False
+        return True
+
+
+    def create_room(self, roomName, client):
+        if self.verify_chat_room(roomName):
+            room = Room(roomName, client.get_socket())
+            room.add_member(client.get_socket)
+            self.rooms.append(room)
+            client.get_socket().send(bytes('Sala creada exitosamente',
+                                            'UTF-8'))
+        else:
+            client.get_socket().send(bytes('Ya existe una sala con ese nombre',
+                                            'UTF-8'))
+
+
+    def get_people_invited(self, users):
+        invited = []
+        for user in users:
+            if Room.verify_if_is_invited(user):
+                invited.append(user)
+        return invited
+
+
+    def get_unique_users(self, users):
+        users_without_duplicates = []
+        for user in users:
+            if user not in users_without_duplicates:
+                users_without_duplicates.append(user)
+        return users_without_duplicates
+
+
+    def invite_users(self, roomName, users, client):
+        for room in self.rooms:
+            if room.get_name() == roomName:
+                if room.verify_owner(client.get_socket()):
+                    for user in users:
+                        room.invite_member(user)
+                        user.send(bytes('Has sido invidado a la sala {} por \
+                                        parte de {}'.format(roomName, client.get_name()),
+                                        'UTF-8'))
+                    Client.get_socket().send(bytes('Todos han sido invitados',
+                                                    'UTF-8'))
+
+                else:
+                    client.get_socket().send(bytes('No eres el dueño de la sala',
+                                                    'UTF-8'))
+
+
+
+
+
+
+
+
+
+
 
 
     def receive_message(self, client):
@@ -102,30 +178,78 @@ class Server:
             message = message.decode('utf-8')
             message = message.split(' ')
 
-            if message[0] == Protocol.IDENTIFY.value and len(message) > 1:
-                self.change_client_name(message[1], client)
+            if message[0] == Protocol.IDENTIFY.value:
+                if len(message) > 1:
+                    self.change_client_name(message[1], client)
+                else:
+                    self.client.get_socket().send(bytes('No se especifico nombre',
+                                                        'UTF-8'))
 
-            elif message[0] == Protocol.STATUS.value and len(message) > 1:
-                self.change_user_status(message[1], client)
 
-            elif message[0] == Protocol.MESSAGE.value and len(message) > 2:
-                message_to_user = message[1]
-                userMessage = self.get_user_message(message, 2)
-                self.send_direct_message(message_to_user, userMessage, client)
+            elif message[0] == Protocol.STATUS.value:
+                if len(message) > 1:
+                    self.change_user_status(message[1], client)
+                else:
+                    self.client.get_socket().send(bytes('No se especifico status',
+                                                        'UTF-8'))
+
+
+            elif message[0] == Protocol.MESSAGE.value:
+                if len(message) > 2:
+                    message_to_user = message[1]
+                    userMessage = self.get_user_message(message, 2)
+                    self.send_direct_message(message_to_user, userMessage, client)
+                else:
+                    if len(message == 1):
+                        self.client.get_socket().send(bytes('No se especifico \
+                                                            mensaje', 'UTF-8'))
+                    else:
+                        self.client.get_socket().send(bytes('No se especifico \
+                                                            usuario ni mensaje',
+                                                            'UTF-8'))
+
 
             elif message[0] == Protocol.USERS.value:
                 self.send_clients()
 
-            elif message[0] == Protocol.PUBLICMESSAGE.value and len(message) > 1:
-                userMessage = self.get_user_message(message, 1)
-                self.send_public_message(userMessage)
 
-            elif message[0] == Protocol.CREATEROOM.value and len(message) > 1:
-                room_name = message[1]
-                self.create_room(room_name, client)
+            elif message[0] == Protocol.PUBLICMESSAGE.value:
+                if len(message) > 1:
+                    userMessage = self.get_user_message(message, 1)
+                    self.send_public_message(userMessage)
+                else:
+                    self.client.get_socket().send(bytes('No se especifico mensaje',
+                                                        'UTF-8'))
 
-            # elif message[0] == Protocol.INVITE.value:
-            #
+
+            elif message[0] == Protocol.CREATEROOM.value:
+                if len(message) > 1:
+                    roomName = message[1]
+                    self.create_room(roomName, client)
+                else:
+                    self.client.get_socket().send(bytes('No se especifico nombre \
+                                                        de la sala', 'UTF-8'))
+
+
+            elif message[0] == Protocol.INVITE.value:
+                if len(message) > 2:
+                    roomName = message[0]
+                    users = self.get_users_names(message, 2)
+                    users_verified = self.get_unique_users(users)
+                    sockets = self.get_sockets(users_verified)
+                    self.invite_users(roomName, sockets, client)
+                else:
+                    if len(message == 1):
+                        self.client.get_socket().send(bytes('No se especificaron \
+                                                            los invitados a la   \
+                                                            sala', 'UTF-8'))
+                    else:
+                        self.client.get_socket().send(bytes('No se especifico el \
+                                                            nombre de la sala ni \
+                                                            los invitados',
+                                                            'UTF-8'))
+
+
             # elif message[0] == Protocol.JOINROOM.value:
             #
             # elif message[0] == Protocol.ROOMMESSAGE.value:

@@ -13,8 +13,7 @@ class Room:
         return self.name
 
     def invite_member(self, user):
-        userSocket = user.get_socket()
-        self.peopleInvited.append(userSocket)
+        self.peopleInvited.append(user)
 
     def add_member(self, user):
         self.members.append(user)
@@ -25,4 +24,11 @@ class Room:
     def get_owner(self):
         return self.owner
 
-    
+    def verify_owner(self, user):
+        return self.owner == user
+
+    def verify_if_is_invited(self, user):
+        for person in self.peopleInvited:
+            if person == user:
+                return True
+        return False
