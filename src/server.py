@@ -28,10 +28,10 @@ class Server:
     def change_client_name(self, name, client):
         if self.name_is_unique(name):
             client.set_name(name)
-            client.get_socket().send(bytes('Usuario actualizado exitosamente',
+            client.get_socket().send(bytes('Usuario actualizado exitosamente.',
                                            'UTF-8'))
         else:
-            client.get_socket().send(bytes('Nombre repetido', 'UTF-8'))
+            client.get_socket().send(bytes('Nombre repetido.', 'UTF-8'))
 
 
     def send_clients(self):
@@ -64,19 +64,19 @@ class Server:
             destination = self.get_user_socket(user)
             destination.send(bytes(message, 'UTF-8'))
         else:
-            client.get_socket().send(bytes('Usuario no encontrado', 'UTF-8'))
+            client.get_socket().send(bytes('Usuario no encontrado.', 'UTF-8'))
 
     def verify_status(self, status, client):
         verified = True
         if status == client.get_status():
-            client.get_socket().send(bytes('Estado enviado es igual a'
-                                           'tu estado actual','UTF-8'))
+            client.get_socket().send(bytes('Estado enviado es igual a '
+                                           'tu estado actual.','UTF-8'))
             verified = False
         elif status != Status.ACTIVE.value and \
              status != Status.AWAY.value and \
              status != Status.BUSY.value:
             client.get_socket().send(bytes('Manda un estado valido: '
-                                           'ACTIVE, AWAY o BUSY' ,'UTF-8'))
+                                           'ACTIVE, AWAY o BUSY.' ,'UTF-8'))
             verified = False
         return verified
 
@@ -84,7 +84,7 @@ class Server:
     def change_user_status(self, status, client):
         if self.verify_status(status, client):
             client.set_status(status)
-            client.get_socket().send(bytes('Estado actualizado exitosamente',
+            client.get_socket().send(bytes('Estado actualizado exitosamente.',
                                             'UTF-8'))
 
 
@@ -112,7 +112,7 @@ class Server:
 
     def verify_chat_room_existance(self, roomName):
         for room in self.rooms:
-            if roomName == rom.get_name():
+            if room.get_name() == roomName:
                 return True
         return False
 
@@ -122,10 +122,10 @@ class Server:
             room = Room(roomName, client.get_socket())
             room.add_member(client.get_socket)
             self.rooms.append(room)
-            client.get_socket().send(bytes('Sala creada exitosamente',
+            client.get_socket().send(bytes('Sala creada exitosamente.',
                                             'UTF-8'))
         else:
-            client.get_socket().send(bytes('Ya existe una sala con ese nombre',
+            client.get_socket().send(bytes('Ya existe una sala con ese nombre.',
                                             'UTF-8'))
 
 
@@ -151,14 +151,18 @@ class Server:
                 if room.verify_owner(client.get_socket()):
                     for user in users:
                         room.invite_member(user)
-                        user.send(bytes('Has sido invidado a la sala {} por'
-                                        'parte de {}'.format(roomName, client.get_name()),
+                        if client.has_name(client):
+                            name = client.get_name()
+                        else:
+                            name = client.get_ip()
+                        user.send(bytes('Has sido invidado a la sala {} por '
+                                        'parte de {}.'.format(roomName, name),
                                         'UTF-8'))
-                    Client.get_socket().send(bytes('Todos han sido invitados',
+                    client.get_socket().send(bytes('Todos han sido invitados.',
                                                    'UTF-8'))
 
                 else:
-                    client.get_socket().send(bytes('No eres el dueño de la sala',
+                    client.get_socket().send(bytes('No eres el dueño de la sala.',
                                                    'UTF-8'))
 
 
@@ -182,7 +186,7 @@ class Server:
                 if len(message) > 1:
                     self.change_client_name(message[1], client)
                 else:
-                    client.get_socket().send(bytes('No se especifico nombre',
+                    client.get_socket().send(bytes('No se especifico nombre.',
                                                    'UTF-8'))
 
 
@@ -190,7 +194,7 @@ class Server:
                 if len(message) > 1:
                     self.change_user_status(message[1], client)
                 else:
-                    client.get_socket().send(bytes('No se especifico status',
+                    client.get_socket().send(bytes('No se especifico status.',
                                                    'UTF-8'))
 
 
@@ -201,11 +205,11 @@ class Server:
                     self.send_direct_message(message_to_user, userMessage, client)
                 else:
                     if len(message == 1):
-                        client.get_socket().send(bytes('No se especifico'
-                                                       'mensaje', 'UTF-8'))
+                        client.get_socket().send(bytes('No se especifico '
+                                                       'mensaje.', 'UTF-8'))
                     else:
-                        client.get_socket().send(bytes('No se especifico'
-                                                       'usuario ni mensaje',
+                        client.get_socket().send(bytes('No se especifico '
+                                                       'usuario ni mensaje.',
                                                        'UTF-8'))
 
 
@@ -218,7 +222,7 @@ class Server:
                     userMessage = self.get_user_message(message, 1)
                     self.send_public_message(userMessage)
                 else:
-                    client.get_socket().send(bytes('No se especifico mensaje',
+                    client.get_socket().send(bytes('No se especifico mensaje.',
                                                    'UTF-8'))
 
 
@@ -227,30 +231,35 @@ class Server:
                     roomName = message[1]
                     self.create_room(roomName, client)
                 else:
-                    client.get_socket().send(bytes('No se especifico nombre'
-                                                   'de la sala', 'UTF-8'))
+                    client.get_socket().send(bytes('No se especifico nombre '
+                                                   'de la sala.', 'UTF-8'))
 
 
             elif message[0] == Protocol.INVITE.value:
-                roomName = message[0]
+                roomName = message[1]
                 if len(message) > 2 and self.verify_chat_room_existance(roomName):
                     users_verified = self.get_unique_users(message)
                     sockets = self.get_sockets(users_verified)
-                    self.invite_users(roomName, sockets, client)
-                else:
-                    if self.verify_chat_room_existance(roomName) == False:
-                        client.get_socket().send(bytes('No existe una sala'
-                                                        'con ese nombre',
-                                                        'UTF-8'))
-                    elif len(message == 1):
-                        client.get_socket().send(bytes('No se especificaron'
-                                                       'los invitados a la'
-                                                       'sala', 'UTF-8'))
+                    if len(sockets) > 0:
+                        self.invite_users(roomName, sockets, client)
                     else:
-                        client.get_socket().send(bytes('No se especifico el'
-                                                       'nombre de la sala ni'
-                                                       'los invitados',
+                        client.get_socket().send(bytes('No existen los usuarios '
+                                                       'que quieres invitar',
                                                        'UTF-8'))
+                else:
+                    if len(message) == 2:
+                        client.get_socket().send(bytes('No se especificaron '
+                        'los invitados a la '
+                        'sala.', 'UTF-8'))
+                    elif len(message) == 1:
+                        client.get_socket().send(bytes('No se especifico el '
+                        'nombre de la sala ni '
+                        'los invitados.',
+                        'UTF-8'))
+                    elif self.verify_chat_room_existance(roomName) == False:
+                        client.get_socket().send(bytes('No existe una sala '
+                                                        'con ese nombre.',
+                                                        'UTF-8'))
 
 
             # elif message[0] == Protocol.JOINROOM.value:

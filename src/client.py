@@ -11,6 +11,9 @@ class Client:
     def set_name(self, name):
         self.name = name
 
+    def has_name(self, user):
+        return user.get_name() != ''
+
     def get_name(self):
         return self.name
 
