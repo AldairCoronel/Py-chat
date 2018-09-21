@@ -34,12 +34,11 @@ class Server:
             client.get_socket().send(bytes('Nombre repetido.', 'UTF-8'))
 
 
-    def send_clients(self):
+    def send_clients(self, client):
         listClients = ''
         for client in self.clients:
             listClients += str(client) + ', '
-        for client in self.clients:
-            client.get_socket().send(bytes(listClients, 'UTF-8'))
+        client.get_socket().send(bytes(listClients, 'UTF-8'))
 
     def verify_user_existance(self, user):
         for client in self.clients:
@@ -214,7 +213,7 @@ class Server:
 
 
             elif message[0] == Protocol.USERS.value:
-                self.send_clients()
+                self.send_clients(client)
 
 
             elif message[0] == Protocol.PUBLICMESSAGE.value:
@@ -262,8 +261,9 @@ class Server:
                                                         'UTF-8'))
 
 
-            # elif message[0] == Protocol.JOINROOM.value:
-            #
+            elif message[0] == Protocol.JOINROOM.value:
+                
+
             # elif message[0] == Protocol.ROOMMESSAGE.value:
 
             if not message:
