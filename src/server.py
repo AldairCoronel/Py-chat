@@ -40,9 +40,8 @@ class Server:
 
     def send_clients(self, client):
         """recibe cliente y envia usuarios registrados"""
-        listClients = ''
-        for client in self.clients:
-            listClients += str(client) + ', '
+        listClients = 'Clientes registrados: '
+        listClients += ','.join(map(str, self.clients))
         for client in self.clients:
             self.send_message(listClients, client.get_socket())
 
