@@ -14,7 +14,7 @@ class Client:
             message = self.server.recv(1024)
             if not message:
                 break
-            print(message)
+            print((message).decode('UTF-8'))
 
     def send_message(self):
         """recibe mensajes del cliente y los manda al servidos"""
