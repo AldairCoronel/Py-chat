@@ -35,9 +35,7 @@ Open one more terminal and run the client
 ```
 python3 client.py localhost 1234
 ```
-<<<<<<< HEAD
-then you can simply play with the protocol
-=======
+
 then you can simply play with it
 
 PROTOCOL
