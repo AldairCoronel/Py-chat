@@ -183,9 +183,21 @@ class Server:
         socket.send(bytes(message, 'UTF-8'))
 
 
+    def delete_client(self, client):
+        for c in self.clients:
+            if client == c:
+                self.clients.remove(c)
+
+    def kill_client(self, client):
+        self.delete_client(client)
+        for room in self.rooms:
+            room.delete_client_from_invited(client)
+            room.delete_client_from_members(client)
+
 
     def receive_message(self, client):
-        while True:
+        connected = True
+        while connected:
             message = client.get_socket().recv(1024)
             message = message.decode('UTF-8')
             message = message.split(' ')
@@ -287,6 +299,30 @@ class Server:
                     else:
                         self.send_message('No se especifico el mensaje.', client.get_socket())
 
+            elif message[0] == Protocol.DISCONNECT.value:
+                if len(message) == 1:
+                    self.send_message('Bye bye', client.get_socket())
+                    self.kill_client(client)
+                    client.get_socket().close()
+                    connected = False
+                else:
+                    self.send_message('Solo debes mandar DISCONNECT', client.get_socket())
+
+
+            else:
+                msg = ''
+                msg += 'Mensaje invalido. A continuacion tiene la lista \n de mensajes validos: \n'
+                msg += 'IDENTIFY nombre : para identificar usuario\n'
+                msg += 'STATUS status: asigna estado al usuario: ACTIVE, BUSY o AWAY\n'
+                msg += 'USERS: muestra los usuarios identificados\n'
+                msg += 'MESSAGE usuario mensaje: envia mensaje privado al usuario\n'
+                msg += 'PUBLICMESSAGE mensaje: envia el mensaje a todos los usuarios identificados\n'
+                msg += 'CREATEROOM nombre: crea una sala con ese nombre, siendo el dueno el usario que la creo\n'
+                msg += 'INVITE nombre usuario1 usuario2...: envia invitaciones a los usuarios para unirse a la sala\n'
+                msg += 'JOINROOM nombre: acepta la invitacion a la sala que fuiste invitado\n'
+                msg += 'ROOMMESSAGE nombre mensaje: envia mensaje a los usuarios de la sala\n'
+                msg += 'DISCONNECT: te desconectas del servidor\n'
+                self.send_message(msg, client.get_socket())
 
             if not message:
                 break
@@ -300,5 +336,4 @@ class Server:
                 self.clients.append(client)
                 serverThread = threading.Thread(target = self.receive_message,
                                 args=(client,))
-                # serverThread.daemon = True
                 serverThread.start()

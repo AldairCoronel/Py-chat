@@ -24,6 +24,16 @@ class Room:
     def get_owner(self):
         return self.owner
 
+    def delete_client_from_invited(self, user):
+        for person in self.peopleInvited:
+            if person == user.get_socket():
+                self.peopleInvited.remove(person)
+
+    def delete_client_from_members(self, user):
+        for member in self.members:
+            if member == user.get_socket():
+                self.members.remove(member)
+
     def verify_owner(self, user):
         return self.owner == user
 
