@@ -4,13 +4,16 @@ from src.client import Client
 from src.status import Status
 from src.room import Room
 
+"""Clase servidor"""
 class Server:
     clients = []
     rooms = []
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     aceptarClientes = False
 
+
     def __init__(self, PORT):
+        """constructor que inicaliza las listas, puerto, ip"""
         self.server.bind(('0.0.0.0', PORT))
         self.server.listen(10000)
         self.clients = []
@@ -19,6 +22,7 @@ class Server:
 
 
     def name_is_unique(self, name):
+        """recibe un nombre y regresa si es el unico en la lista de usuarios"""
         unique = True
         for client in self.clients:
             unique = unique and (False if name == client.get_name() else True)
@@ -26,6 +30,7 @@ class Server:
 
 
     def change_client_name(self, name, client):
+        """recibe nombre y cliente y cambia el nombre del cliente"""
         if self.name_is_unique(name):
             client.set_name(name)
             self.send_message('Usuario actualizado exitosamente.', client.get_socket())
@@ -34,6 +39,7 @@ class Server:
 
 
     def send_clients(self, client):
+        """recibe cliente y envia usuarios registrados"""
         listClients = ''
         for client in self.clients:
             listClients += str(client) + ', '
@@ -42,6 +48,7 @@ class Server:
 
 
     def verify_user_existance(self, user):
+        """recibe un usuario y regresa si esta en la lista de clientes"""
         for client in self.clients:
             if user == client.get_name():
                 return True
@@ -49,17 +56,20 @@ class Server:
 
 
     def get_user_socket(self, user):
+        """recibe un usuerio y regresa su socket"""
         for client in self.clients:
             if user == client.get_name():
                 return client.get_socket()
 
 
     def send_public_message(self, userMessage):
+        """recibe un mensaje y lo envia a todos los usuarios"""
         for client in self.clients:
             self.send_message(userMessage, client.get_socket())
 
 
     def send_direct_message(self, user, message, client):
+        """recibe usuario, mensaje, cliente y envia el mensaje al usuario"""
         if self.verify_user_existance(user):
             destination = self.get_user_socket(user)
             self.send_message(message, destination)
@@ -68,11 +78,14 @@ class Server:
 
 
     def send_room_message(self, room, roomMessage):
+        """recibe sala, mensaje y envia el mensaje a la sala"""
         members = room.get_members()
         for member in members:
             member.send(bytes(roomMessage, 'UTF-8'))
 
+
     def verify_status(self, status, client):
+        """recibe estado, cliente y verifica si es valido"""
         verified = True
         if status == client.get_status():
             self.send_message('Estado enviado es igual a tu estado actual.',
@@ -88,12 +101,14 @@ class Server:
 
 
     def change_user_status(self, status, client):
+        """recibe estado, ciente y cambia el estado del cliente"""
         if self.verify_status(status, client):
             client.set_status(status)
             self.send_message('Estado actualizado exitosamente.', client.get_socket())
 
 
     def get_user_message(self, message, index):
+        """recibe lista de mensajes e indice y regresa el mensaje concatenado"""
         userMessage = ''
         for i in range(index, len(message)):
             userMessage += message[i] + ' '
@@ -101,6 +116,7 @@ class Server:
 
 
     def get_sockets(self, users):
+        """recibe usuarios y regresa sockets"""
         sockets = []
         for user in users:
             for client in self.clients:
@@ -110,12 +126,14 @@ class Server:
 
 
     def verify_chat_room_duplicate(self, roomName):
+        """recibe nombre de sala y verifica si no es un nombre duplicado"""
         for room in self.rooms:
             if roomName == room.get_name():
                 return False
         return True
 
     def verify_chat_room_existance(self, roomName):
+        """recibe nombre de sala y verifica si existe"""
         for room in self.rooms:
             if room.get_name() == roomName:
                 return True
@@ -123,6 +141,7 @@ class Server:
 
 
     def create_room(self, roomName, client):
+        """recibe nombre de sala, cliente y crea una sala"""
         if self.verify_chat_room_duplicate(roomName):
             room = Room(roomName, client.get_socket())
             room.add_member(client.get_socket())
@@ -133,6 +152,7 @@ class Server:
 
 
     def get_people_invited(self, users):
+        """recibe usuarios y regresa a los usuarios invitados"""
         invited = []
         for user in users:
             if Room.verify_if_is_invited(user):
@@ -141,6 +161,7 @@ class Server:
 
 
     def get_unique_users(self, users):
+        """recibe usuarios y regresa usuarios sin duplicados"""
         users_without_duplicates = []
         for user in range(2, len(users)):
             if users[user] not in users_without_duplicates:
@@ -149,6 +170,7 @@ class Server:
 
 
     def invite_users(self, roomName, users, client):
+        """recibe nombre de sala, usuarios, cliente e invita los usuarios a la sala"""
         for room in self.rooms:
             if room.get_name() == roomName:
                 if room.verify_owner(client.get_socket()):
@@ -166,6 +188,7 @@ class Server:
 
 
     def join_room(self, client, room):
+        """recibe cliente, sala y mete al cliente a la sala"""
         if room.verify_if_is_invited(client):
             room.add_member(client)
             self.send_message('Te has unido a la sala {}'.format(room.get_name()), client)
@@ -174,21 +197,26 @@ class Server:
 
 
     def get_room(self, roomName):
+        """recibe nombre de sala y regresa el objeto sala"""
         for room in self.rooms:
             if roomName == room.get_name():
                 return room
 
 
     def send_message(self, message, socket):
+        """recibe mensaje, socket y lo envia a ese cliente"""
         socket.send(bytes(message, 'UTF-8'))
 
 
     def delete_client(self, client):
+        """recibe cliente y lo elimina de la lista de clientes"""
         for c in self.clients:
             if client == c:
                 self.clients.remove(c)
 
+
     def kill_client(self, client):
+        """recibe cliente y lo mata"""
         self.delete_client(client)
         for room in self.rooms:
             room.delete_client_from_invited(client)
@@ -196,6 +224,7 @@ class Server:
 
 
     def receive_message(self, client):
+        """recibe cliente y escucha lo que manda"""
         connected = True
         while connected:
             message = client.get_socket().recv(1024)
@@ -311,17 +340,17 @@ class Server:
 
             else:
                 msg = ''
-                msg += 'Mensaje invalido. A continuacion tiene la lista \n de mensajes validos: \n'
-                msg += 'IDENTIFY nombre : para identificar usuario\n'
-                msg += 'STATUS status: asigna estado al usuario: ACTIVE, BUSY o AWAY\n'
-                msg += 'USERS: muestra los usuarios identificados\n'
-                msg += 'MESSAGE usuario mensaje: envia mensaje privado al usuario\n'
-                msg += 'PUBLICMESSAGE mensaje: envia el mensaje a todos los usuarios identificados\n'
-                msg += 'CREATEROOM nombre: crea una sala con ese nombre, siendo el dueno el usario que la creo\n'
-                msg += 'INVITE nombre usuario1 usuario2...: envia invitaciones a los usuarios para unirse a la sala\n'
-                msg += 'JOINROOM nombre: acepta la invitacion a la sala que fuiste invitado\n'
-                msg += 'ROOMMESSAGE nombre mensaje: envia mensaje a los usuarios de la sala\n'
-                msg += 'DISCONNECT: te desconectas del servidor\n'
+                msg += 'Mensaje invalido. A continuacion tiene la lista de mensajes validos: '
+                msg += '| IDENTIFY nombre : para identificar usuario'
+                msg += '| STATUS status: asigna estado al usuario: ACTIVE, BUSY o AWAY'
+                msg += '| USERS: muestra los usuarios identificados'
+                msg += '| MESSAGE usuario mensaje: envia mensaje privado al usuario'
+                msg += '| PUBLICMESSAGE mensaje: envia el mensaje a todos los usuarios identificados'
+                msg += '| CREATEROOM nombre: crea una sala con ese nombre, siendo el dueno el usario que la creo'
+                msg += '| INVITE nombre usuario1 usuario2...: envia invitaciones a los usuarios para unirse a la sala'
+                msg += '| JOINROOM nombre: acepta la invitacion a la sala que fuiste invitado'
+                msg += '| ROOMMESSAGE nombre mensaje: envia mensaje a los usuarios de la sala'
+                msg += '| DISCONNECT: te desconectas del servidor'
                 self.send_message(msg, client.get_socket())
 
             if not message:
@@ -329,6 +358,7 @@ class Server:
 
 
     def arriba(self):
+        """sube el servidor"""
         while self.aceptarClientes:
                 connection, address = self.server.accept()
                 client = Client(None, connection, address)

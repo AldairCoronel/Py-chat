@@ -1,9 +1,11 @@
 import sys, socket, threading
 
+"""main del cliente"""
 class Client:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def __init__(self, HOST, PORT):
+        """inicializa al cliente"""
         self.server.connect((HOST, PORT))
         clientThread = threading.Thread(target = self.send_message)
         clientThread.daemon = True
@@ -15,6 +17,7 @@ class Client:
             print(message)
 
     def send_message(self):
+        """recibe mensajes del cliente y los manda al servidos"""
         while True:
             self.server.send(bytes(input(''), 'UTF-8'))
 
@@ -22,7 +25,7 @@ class Client:
 
 
 
-
+"""lee argumentos"""
 if len(sys.argv) != 3:
     print ("Error: necesitas pasar: archivo, IP, puerto.")
     exit()

@@ -1,6 +1,7 @@
 import sys
 from enum import Enum
 
+"""enumeracion del protocolo"""
 class Protocol(Enum):
 
     IDENTIFY = 'IDENTIFY'
