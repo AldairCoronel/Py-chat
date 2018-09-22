@@ -40,8 +40,9 @@ class Server:
 
     def send_clients(self, client):
         """recibe cliente y envia usuarios registrados"""
-        listClients = 'Clientes registrados: '
-        listClients += ','.join(map(str, self.clients))
+        listClients = ''
+        for client in self.clients:
+            listClients += str(client) + ', '
         for client in self.clients:
             self.send_message(listClients, client.get_socket())
 
@@ -332,6 +333,7 @@ class Server:
                     self.send_message('Bye bye', client.get_socket())
                     self.kill_client(client)
                     client.get_socket().close()
+                    print('Acaba de desconectarse ', client.get_ip())
                     connected = False
                 else:
                     self.send_message('Solo debes mandar DISCONNECT', client.get_socket())
