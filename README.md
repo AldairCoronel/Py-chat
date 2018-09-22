@@ -85,7 +85,7 @@ Enviará el mensaje a todos los usuarios dentro de esa sala, ejemplo: ROOMESSAGE
 • DISCONNECT
 ```
 El usuario se desconecta del servidor, ejemplo: DISCONNECT
->>>>>>> e745c20a2ac4554b8d9d75d2e1cf3e607784ac65
+
 
 
 
