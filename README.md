@@ -1,4 +1,4 @@
-# Chat
+# Pychat
 
 Chat using MVC for MyP class.
 
